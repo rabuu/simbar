@@ -26,7 +26,7 @@ for arg in "$@"; do
 		next_is_config=''
 	elif [ "$next_is_update" ]; then
 		if [ "$arg" -eq "$arg" ]; then
-			update_freq="$arg"
+			freq="$arg"
 		else
 			echo "ERROR: Not a number: $arg" >&2
 			exit 1
@@ -80,7 +80,11 @@ if [ -z "$freq_mode" ]; then
 	exit 1
 fi
 
-wrap_into_colors() {
+#
+# helper functions
+#
+
+apply_colorcodes() {
 	content=$1
 	fg=$2
 	bg=$3
@@ -103,6 +107,34 @@ wrap_into_colors() {
 
 }
 
+check_config() {
+	mod=$1
+	freq=$2
+	fg=$3
+	bg=$4
+
+	invalid_config=''
+
+	if ! [ -f "$mod" ]; then
+		echo "ERROR: Module $mod not found!" >&2
+		invalid_config='true'
+	fi
+
+	if [ "$(printf "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
+		echo "ERROR: $fg is not a valid hex color code"
+		invalid_config='true'
+	fi
+
+	if [ "$(printf "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
+		echo "ERROR: $bg is not a valid hex color code"
+		invalid_config='true'
+	fi
+}
+
+#
+# cache
+#
+
 cache_module() {
 	mod=$1
 
@@ -120,9 +152,14 @@ get_value_from_cache() {
 	printf "$cache" | grep "^$mod_regex" | cut -d"$esc_char" -f2
 }
 
+#
+# main bar generation function
+#
+
 generate_bar() {
 	sec=$1
 
+	# reset bar
 	bar=''
 
 	# load modules.conf
@@ -136,25 +173,28 @@ generate_bar() {
 '
 	for line in $config; do
 		mod="$config_dir/modules/$(echo $line | cut -d' ' -f1)"
-		update_freq="$(echo $line | cut -d' ' -f2)"
+		freq="$(echo $line | cut -d' ' -f2)"
 		fg="$(printf $line | cut -d' ' -f3)"
 		bg="$(printf $line | cut -d' ' -f4)"
 
-		if [ $update_freq -ge 1 ] && [ $(($sec % $update_freq)) -eq 0 ]; then
-			cache_module "$mod"
-		else
-			printf "$cache" | grep -q "^$mod" || cache_module "$mod"
-		fi
+		check_config "$mod" "$freq" "$fg" "$bg"
+		if ! [ "$invalid_config" ]; then
+			if [ $freq -ge 1 ] && [ $(($sec % $freq)) -eq 0 ]; then
+				cache_module "$mod"
+			else
+				printf "$cache" | grep -q "^$mod" || cache_module "$mod"
+			fi
 
-		out="$(wrap_into_colors "$(get_value_from_cache "$mod")" "$fg" "$bg")"
-		[ "$bar" ] && bar="$bar\n$out" || bar="$out"
+			out="$(apply_colorcodes "$(get_value_from_cache "$mod")" "$fg" "$bg")"
+			[ "$bar" ] && bar="$bar\n$out" || bar="$out"
+		fi
 	done
 
 	bar="$(printf "$bar" | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g")"
 }
 
 #
-# main
+# main routine
 #
 
 if [ "$freq_mode" = 'once' ]; then
