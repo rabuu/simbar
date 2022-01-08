@@ -8,7 +8,7 @@ usage='USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/confi
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/simbar"
 config_file='simbar.modules'
-delimiter=' '
+delimiter=' | '
 esc_char="$(printf '\037')"
 
 #
@@ -99,14 +99,20 @@ apply_colorcodes() {
 }
 
 check_config() {
-	mod=$1
-	freq=$2
-	fg=$3
-	bg=$4
+	mod_short=$1
+	mod=$2
+	freq=$3
+	fg=$4
+	bg=$5
+
+	[ "$fg" = 'xgetres' ] && fg="$(xgetres "simbar.${mod_short}.fg")"
+	[ "$bg" = 'xgetres' ] && bg="$(xgetres "simbar.${mod_short}.bg")"
 
 	invalid_config=''
 
-	if ! [ -x "$mod" ]; then
+	if printf "$mod_short" | grep -q '^#'; then
+		invalid_config='true'
+	elif ! [ -x "$mod" ]; then
 		echo "ERROR: Module $mod not found or not executable!" >&2
 		invalid_config='true'
 	fi
@@ -115,12 +121,12 @@ check_config() {
 		freq=0
 	fi
 
-	if [ "$fg" != "$mod" ] && [ "$(printf "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
+	if ! [ "$invalid_config" ] && [ "$(printf "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
 		echo "ERROR: $fg is not a valid hex color code" >&2
 		invalid_config='true'
 	fi
 
-	if [ "$bg" != "$mod" ] && [ "$(printf "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
+	if ! [ "$invalid_config" ] && [ "$(printf "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
 		echo "ERROR: $bg is not a valid hex color code" >&2
 		invalid_config='true'
 	fi
@@ -168,14 +174,13 @@ generate_bar() {
 '
 	for line in $config; do
 		line="$line "
+		mod_short="$(printf $line | cut -d' ' -f1)"
 		mod="$config_dir/modules/$(printf $line | cut -d' ' -f1)"
 		freq="$(printf $line | cut -d' ' -f2)"
 		fg="$(printf $line | cut -d' ' -f3)"
 		bg="$(printf $line | cut -d' ' -f4)"
 
-		echo "Module: $mod; freq: $freq; fg: $fg; bg: $bg"
-
-		check_config "$mod" "$freq" "$fg" "$bg"
+		check_config "$mod_short" "$mod" "$freq" "$fg" "$bg"
 		if ! [ "$invalid_config" ]; then
 			if [ "$freq" -ge 1 ] && [ $(($sec % $freq)) -eq 0 ]; then
 				cache_module "$mod"
