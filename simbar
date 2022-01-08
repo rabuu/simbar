@@ -97,7 +97,7 @@ apply_colorcodes() {
 		wrapped="$wrapped^d^"
 	fi
 
-	printf "$wrapped"
+	echo "$wrapped"
 }
 
 check_config() {
@@ -112,7 +112,7 @@ check_config() {
 
 	invalid_config=''
 
-	if printf "$mod_short" | grep -q '^#'; then
+	if echo "$mod_short" | grep -q '^#'; then
 		invalid_config='true'
 	elif ! [ -x "$mod" ]; then
 		echo "ERROR: Module $mod not found or not executable!" >&2
@@ -123,12 +123,12 @@ check_config() {
 		freq=0
 	fi
 
-	if ! [ "$invalid_config" ] && [ "$(printf "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
+	if ! [ "$invalid_config" ] && [ "$(echo "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
 		echo "ERROR: $fg is not a valid hex color code" >&2
 		invalid_config='true'
 	fi
 
-	if ! [ "$invalid_config" ] && [ "$(printf "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
+	if ! [ "$invalid_config" ] && [ "$(echo "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
 		echo "ERROR: $bg is not a valid hex color code" >&2
 		invalid_config='true'
 	fi
@@ -141,18 +141,18 @@ check_config() {
 cache_module() {
 	mod=$1
 
-	mod_regex="$(printf "$mod" | sed 's/\//\\\//g')"
+	mod_regex="$(echo "$mod" | sed 's/\//\\\//g')"
 
-	cache="$(printf "$cache" | sed "/^$mod_regex/d")"
+	cache="$(echo "$cache" | sed "/^$mod_regex/d")"
 	cache="$cache\n$mod$esc_char$($mod)"
 }
 
 get_value_from_cache() {
 	mod=$1
 
-	mod_regex="$(printf "$mod" | sed 's/\//\\\//g')"
+	mod_regex="$(echo "$mod" | sed 's/\//\\\//g')"
 
-	printf "$cache" | grep "^$mod_regex" | cut -d"$esc_char" -f2
+	echo "$cache" | grep "^$mod_regex" | cut -d"$esc_char" -f2
 }
 
 #
@@ -176,18 +176,18 @@ generate_bar() {
 '
 	for line in $config; do
 		line="$line "
-		mod_short="$(printf $line | cut -d' ' -f1)"
-		mod="$config_dir/modules/$(printf $line | cut -d' ' -f1)"
-		freq="$(printf $line | cut -d' ' -f2)"
-		fg="$(printf $line | cut -d' ' -f3)"
-		bg="$(printf $line | cut -d' ' -f4)"
+		mod_short="$(echo $line | cut -d' ' -f1)"
+		mod="$config_dir/modules/$(echo $line | cut -d' ' -f1)"
+		freq="$(echo $line | cut -d' ' -f2)"
+		fg="$(echo $line | cut -d' ' -f3)"
+		bg="$(echo $line | cut -d' ' -f4)"
 
 		check_config "$mod_short" "$mod" "$freq" "$fg" "$bg"
 		if ! [ "$invalid_config" ]; then
 			if [ "$freq" -ge 1 ] && [ $(($sec % $freq)) -eq 0 ]; then
 				cache_module "$mod"
 			else
-				printf "$cache" | grep -q "^$mod" || cache_module "$mod"
+				echo "$cache" | grep -q "^$mod" || cache_module "$mod"
 			fi
 
 			out="$(apply_colorcodes "$(get_value_from_cache "$mod")" "$fg" "$bg")"
@@ -195,7 +195,7 @@ generate_bar() {
 		fi
 	done
 
-	bar="$(printf "$bar " | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g")"
+	bar="$(echo "$bar " | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g;s/$delimiter$//")"
 }
 
 #
@@ -205,7 +205,7 @@ generate_bar() {
 if [ "$freq_mode" = 'once' ]; then
 	generate_bar 0
 	if [ "$print_mode" ]; then
-		printf "$bar"
+		echo "$bar"
 	fi
 
 	if [ "$xsetroot_mode" ]; then
