@@ -7,7 +7,9 @@ usage='USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/confi
 #
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/simbar"
+config_dir="./config"
 delimiter=' '
+esc_char="$(printf '\037')"
 
 #
 # user input
@@ -78,11 +80,6 @@ if [ -z "$freq_mode" ]; then
 	exit 1
 fi
 
-
-#
-# helper function to wrap output into colors
-#
-
 wrap_into_colors() {
 	content=$1
 	fg=$2
@@ -106,11 +103,28 @@ wrap_into_colors() {
 
 }
 
-#
-# initialize bar
-#
+cache_module() {
+	mod=$1
 
-init_bar() {
+	mod_regex="$(printf "$mod" | sed 's/\//\\\//g')"
+
+	cache="$(printf "$cache" | sed "/^$mod_regex/d")"
+	cache="$cache\n$mod$esc_char$($mod)"
+}
+
+get_value_from_cache() {
+	mod=$1
+
+	mod_regex="$(printf "$mod" | sed 's/\//\\\//g')"
+
+	printf "$cache" | grep "^$mod_regex" | cut -d"$esc_char" -f2
+}
+
+generate_bar() {
+	sec=$1
+
+	bar=''
+
 	# load modules.conf
 	if ! [ -f "$config_dir/modules.conf" ]; then
 		echo "ERROR: No config file found: $config_dir/modules.conf" >&2
@@ -123,81 +137,46 @@ init_bar() {
 	for line in $config; do
 		mod="$config_dir/modules/$(echo $line | cut -d' ' -f1)"
 		update_freq="$(echo $line | cut -d' ' -f2)"
-		fgcol="$(echo $line | cut -d' ' -f3)"
-		bgcol="$(echo $line | cut -d' ' -f4)"
+		fg="$(printf $line | cut -d' ' -f3)"
+		bg="$(printf $line | cut -d' ' -f4)"
 
-		mod_output="$mod~$update_freq~$(wrap_into_colors "§$($mod)§" "$fgcol" "$bgcol")"
-		[ "$bar" ] && bar="$bar\n$mod_output" || bar="$mod_output"
-	done
-
-	printf "$bar"
-}
-
-#
-# update bar
-#
-
-update_bar() {
-	bar=$1
-	sec=$2
-
-	line_num=1
-
-	IFS=$'
-'
-	for line in $bar; do
-		mod="$(echo $line | cut -d'~' -f1)"
-		update_freq="$(echo $line | cut -d'~' -f2)"
-
-		if ([ $update_freq -ge 1 ] && [ $((sec % update_freq)) -eq 0 ]); then
-			bar="$(echo "$bar" | sed "${line_num}s/§.*§/§$($mod)§/")"
+		if [ $update_freq -ge 1 ] && [ $(($sec % $update_freq)) -eq 0 ]; then
+			cache_module "$mod"
+		else
+			printf "$cache" | grep -q "^$mod" || cache_module "$mod"
 		fi
 
-		line_num=$((line_num + 1))
+		out="$(wrap_into_colors "$(get_value_from_cache "$mod")" "$fg" "$bg")"
+		[ "$bar" ] && bar="$bar\n$out" || bar="$out"
 	done
 
-	printf "$bar"
-}
-
-#
-# format bar
-#
-
-format_bar() {
-	bar=$1
-	del=$2
-
-	# printf "$bar"
-	printf "$bar" | cut -d'~' -f3 | tr -d '§' | tr '\n' '~' | sed "s/~/$del/g;s/$del\$//"
+	bar="$(printf "$bar" | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g")"
 }
 
 #
 # main
 #
 
-bar="$(init_bar)"
-trap '' "RTMIN+6"
-
 if [ "$freq_mode" = 'once' ]; then
+	generate_bar 0
 	if [ "$print_mode" ]; then
-		format_bar "$bar" "$delimiter"
+		printf "$bar"
 	fi
 
 	if [ "$xsetroot_mode" ]; then
-		xsetroot -name "$(format_bar "$bar" "delimiter")"
+		xsetroot -name "$bar"
 	fi
 elif [ "$freq_mode" = 'repeat' ]; then
 	sec=0
 	while true; do
-		bar="$(update_bar "$bar" $sec)"
+		generate_bar "$sec"
 
 		if [ "$print_mode" ]; then
-			format_bar "$bar" "$delimiter"
-			echo
+			echo "$bar"
 		fi
 
 		if [ "$xsetroot_mode" ]; then
-			xsetroot -name "$(format_bar "$bar" "$delimiter")"
+			xsetroot -name "$bar"
 		fi
 
 		sleep 1
