@@ -78,38 +78,31 @@ if [ -z "$freq_mode" ]; then
 	exit 1
 fi
 
-# load modules.conf
-if ! [ -f "$config_dir/modules.conf" ]; then
-	echo "ERROR: No config file found: $config_dir/modules.conf" >&2
-	exit 1
-fi
-config="$(sed 's/ /~/g' "$config_dir/modules.conf")"
-
 
 #
 # helper function to wrap output into colors
 #
 
-apply_colors() {
-	mod=$1
+wrap_into_colors() {
+	content=$1
 	fg=$2
 	bg=$3
 
-	output="$($mod)"
+	wrapped="$content"
 
 	if [ "$fg" ]; then
-		output="^c$fg^$output"
+		wrapped="^c$fg^$wrapped"
 	fi
 
 	if [ "$bg" ]; then
-		output="^b$bg^$output"
+		wrapped="^b$bg^$wrapped"
 	fi
 
 	if [ "$fg" ] || [ "$bg" ]; then
-		output="$output^d^"
+		wrapped="$wrapped^d^"
 	fi
 
-	echo $output
+	printf "$wrapped"
 
 }
 
@@ -118,13 +111,23 @@ apply_colors() {
 #
 
 init_bar() {
-	for line in $config; do
-		mod="$config_dir/modules/$(echo $line | cut -d'~' -f1)"
-		fgcol="$(echo $line | cut -d'~' -f3)"
-		bgcol="$(echo $line | cut -d'~' -f4)"
+	# load modules.conf
+	if ! [ -f "$config_dir/modules.conf" ]; then
+		echo "ERROR: No config file found: $config_dir/modules.conf" >&2
+		exit 1
+	fi
+	config="$(cat "$config_dir/modules.conf")"
 
-		output=$(apply_colors "$mod" "$fgcol" "$bgcol")
-		[ "$bar" ] && bar="$bar\n$output" || bar="$output"
+	IFS=$'
+'
+	for line in $config; do
+		mod="$config_dir/modules/$(echo $line | cut -d' ' -f1)"
+		update_freq="$(echo $line | cut -d' ' -f2)"
+		fgcol="$(echo $line | cut -d' ' -f3)"
+		bgcol="$(echo $line | cut -d' ' -f4)"
+
+		mod_output="$mod~$update_freq~$(wrap_into_colors "§$($mod)§" "$fgcol" "$bgcol")"
+		[ "$bar" ] && bar="$bar\n$mod_output" || bar="$mod_output"
 	done
 
 	printf "$bar"
@@ -139,15 +142,15 @@ update_bar() {
 	sec=$2
 
 	line_num=1
-	for line in $config; do
-		mod="$config_dir/modules/$(echo $line | cut -d'~' -f1)"
+
+	IFS=$'
+'
+	for line in $bar; do
+		mod="$(echo $line | cut -d'~' -f1)"
 		update_freq="$(echo $line | cut -d'~' -f2)"
-		fgcol="$(echo $line | cut -d'~' -f3)"
-		bgcol="$(echo $line | cut -d'~' -f4)"
 
 		if ([ $update_freq -ge 1 ] && [ $((sec % update_freq)) -eq 0 ]); then
-			output=$(apply_colors "$mod" "$fgcol" "$bgcol")
-			bar="$(echo "$bar" | sed "${line_num}s/.*/$output/")"
+			bar="$(echo "$bar" | sed "${line_num}s/§.*§/§$($mod)§/")"
 		fi
 
 		line_num=$((line_num + 1))
@@ -164,7 +167,8 @@ format_bar() {
 	bar=$1
 	del=$2
 
-	printf "$bar " | tr '\n' '~' | sed "s/~/$del/g"
+	# printf "$bar"
+	printf "$bar" | cut -d'~' -f3 | tr -d '§' | tr '\n' '~' | sed "s/~/$del/g;s/$del\$//"
 }
 
 #
@@ -172,6 +176,8 @@ format_bar() {
 #
 
 bar="$(init_bar)"
+trap '' "RTMIN+6"
+
 if [ "$freq_mode" = 'once' ]; then
 	if [ "$print_mode" ]; then
 		format_bar "$bar" "$delimiter"
@@ -183,7 +189,7 @@ if [ "$freq_mode" = 'once' ]; then
 elif [ "$freq_mode" = 'repeat' ]; then
 	sec=0
 	while true; do
-		bar="$(update_bar "$bar")"
+		bar="$(update_bar "$bar" $sec)"
 
 		if [ "$print_mode" ]; then
 			format_bar "$bar" "$delimiter"
