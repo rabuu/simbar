@@ -1,3 +1,200 @@
 #!/bin/sh
 
-echo 'Hello, world!'
+usage='USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--delimiter DEL]'
+
+#
+# defaults
+#
+
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/simbar"
+delimiter=' '
+
+#
+# user input
+#
+
+multiple_freq_modes() {
+	echo 'ERROR: You cannot set multiple frequency modes!' >&2
+	echo $usage >&2
+}
+
+for arg in "$@"; do
+	if [ "$next_is_config" ]; then
+		config_dir="$arg"
+		next_is_config=''
+	elif [ "$next_is_update" ]; then
+		if [ "$arg" -eq "$arg" ]; then
+			update_freq="$arg"
+		else
+			echo "ERROR: Not a number: $arg" >&2
+			exit 1
+		fi
+		next_is_update=''
+	elif [ "$next_is_delimiter" ]; then
+		delimiter="$arg"
+		next_is_delimiter=''
+	else
+		case "$arg" in
+			'-p'|'--print')
+				print_mode='print'
+				;;
+			'-x'|'--xsetroot')
+				xsetroot_mode='xsetroot'
+				;;
+			'-o'|'--once')
+				[ -z "$freq_mode" ] && freq_mode='once' || multiple_freq_modes
+				;;
+			'-r'|'--repeat')
+				[ -z "$freq_mode" ] && freq_mode='repeat' || multiple_freq_modes
+				;;
+			'-c'|'--config')
+				next_is_config=1
+				;;
+			'-d'|'--delimiter')
+				next_is_delimiter=1
+				;;
+			'-h'|'--help')
+				echo $usage
+				exit 0
+				;;
+			*)
+				echo "ERROR: Unknown argument: $arg" >&2
+				echo $usage >&2
+				exit 1
+				;;
+		esac
+	fi
+done
+
+if [ -z "$print_mode" ] && [ -z "$xsetroot_mode" ]; then
+	echo 'ERROR: You have to pass an output mode!' >&2
+	echo $usage >&2
+	exit 1
+fi
+
+if [ -z "$freq_mode" ]; then
+	echo 'ERROR: You have to pass a frequency mode!' >&2
+	echo $usage >&2
+	exit 1
+fi
+
+# load modules.conf
+if ! [ -f "$config_dir/modules.conf" ]; then
+	echo "ERROR: No config file found: $config_dir/modules.conf" >&2
+	exit 1
+fi
+config="$(sed 's/ /~/g' "$config_dir/modules.conf")"
+
+
+#
+# helper function to wrap output into colors
+#
+
+apply_colors() {
+	mod=$1
+	fg=$2
+	bg=$3
+
+	output="$($mod)"
+
+	if [ "$fg" ]; then
+		output="^c$fg^$output"
+	fi
+
+	if [ "$bg" ]; then
+		output="^b$bg^$output"
+	fi
+
+	if [ "$fg" ] || [ "$bg" ]; then
+		output="$output^d^"
+	fi
+
+	echo $output
+
+}
+
+#
+# initialize bar
+#
+
+init_bar() {
+	for line in $config; do
+		mod="$config_dir/modules/$(echo $line | cut -d'~' -f1)"
+		fgcol="$(echo $line | cut -d'~' -f3)"
+		bgcol="$(echo $line | cut -d'~' -f4)"
+
+		output=$(apply_colors "$mod" "$fgcol" "$bgcol")
+		[ "$bar" ] && bar="$bar\n$output" || bar="$output"
+	done
+
+	printf "$bar"
+}
+
+#
+# update bar
+#
+
+update_bar() {
+	bar=$1
+	sec=$2
+
+	line_num=1
+	for line in $config; do
+		mod="$config_dir/modules/$(echo $line | cut -d'~' -f1)"
+		update_freq="$(echo $line | cut -d'~' -f2)"
+		fgcol="$(echo $line | cut -d'~' -f3)"
+		bgcol="$(echo $line | cut -d'~' -f4)"
+
+		if ([ $update_freq -ge 1 ] && [ $((sec % update_freq)) -eq 0 ]); then
+			output=$(apply_colors "$mod" "$fgcol" "$bgcol")
+			bar="$(echo "$bar" | sed "${line_num}s/.*/$output/")"
+		fi
+
+		line_num=$((line_num + 1))
+	done
+
+	printf "$bar"
+}
+
+#
+# format bar
+#
+
+format_bar() {
+	bar=$1
+	del=$2
+
+	printf "$bar " | tr '\n' '~' | sed "s/~/$del/g"
+}
+
+#
+# main
+#
+
+bar="$(init_bar)"
+if [ "$freq_mode" = 'once' ]; then
+	if [ "$print_mode" ]; then
+		format_bar "$bar" "$delimiter"
+	fi
+
+	if [ "$xsetroot_mode" ]; then
+		xsetroot -name "$(format_bar "$bar" "delimiter")"
+	fi
+elif [ "$freq_mode" = 'repeat' ]; then
+	sec=0
+	while true; do
+		bar="$(update_bar "$bar")"
+
+		if [ "$print_mode" ]; then
+			format_bar "$bar" "$delimiter"
+			echo
+		fi
+
+		if [ "$xsetroot_mode" ]; then
+			xsetroot -name "$(format_bar "$bar" "$delimiter")"
+		fi
+
+		sleep 1
+		sec=$((sec + 1))
+	done
+fi
