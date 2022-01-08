@@ -7,7 +7,7 @@ usage='USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/confi
 #
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/simbar"
-config_dir="./config"
+config_file='simbar.modules'
 delimiter=' '
 esc_char="$(printf '\037')"
 
@@ -24,14 +24,6 @@ for arg in "$@"; do
 	if [ "$next_is_config" ]; then
 		config_dir="$arg"
 		next_is_config=''
-	elif [ "$next_is_update" ]; then
-		if [ "$arg" -eq "$arg" ]; then
-			freq="$arg"
-		else
-			echo "ERROR: Not a number: $arg" >&2
-			exit 1
-		fi
-		next_is_update=''
 	elif [ "$next_is_delimiter" ]; then
 		delimiter="$arg"
 		next_is_delimiter=''
@@ -104,7 +96,6 @@ apply_colorcodes() {
 	fi
 
 	printf "$wrapped"
-
 }
 
 check_config() {
@@ -115,18 +106,22 @@ check_config() {
 
 	invalid_config=''
 
-	if ! [ -f "$mod" ]; then
-		echo "ERROR: Module $mod not found!" >&2
+	if ! [ -x "$mod" ]; then
+		echo "ERROR: Module $mod not found or not executable!" >&2
 		invalid_config='true'
 	fi
 
-	if [ "$(printf "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
-		echo "ERROR: $fg is not a valid hex color code"
+	if ! [ "$freq" -eq "$freq" ] 2> /dev/null; then
+		freq=0
+	fi
+
+	if [ "$fg" != "$mod" ] && [ "$(printf "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
+		echo "ERROR: $fg is not a valid hex color code" >&2
 		invalid_config='true'
 	fi
 
-	if [ "$(printf "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
-		echo "ERROR: $bg is not a valid hex color code"
+	if [ "$bg" != "$mod" ] && [ "$(printf "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
+		echo "ERROR: $bg is not a valid hex color code" >&2
 		invalid_config='true'
 	fi
 }
@@ -163,23 +158,26 @@ generate_bar() {
 	bar=''
 
 	# load modules.conf
-	if ! [ -f "$config_dir/modules.conf" ]; then
-		echo "ERROR: No config file found: $config_dir/modules.conf" >&2
+	if ! [ -f "$config_dir/$config_file" ]; then
+		echo "ERROR: No config file found: $config_dir/$config_file" >&2
 		exit 1
 	fi
-	config="$(cat "$config_dir/modules.conf")"
+	config="$(cat "$config_dir/$config_file")"
 
 	IFS=$'
 '
 	for line in $config; do
-		mod="$config_dir/modules/$(echo $line | cut -d' ' -f1)"
-		freq="$(echo $line | cut -d' ' -f2)"
+		line="$line "
+		mod="$config_dir/modules/$(printf $line | cut -d' ' -f1)"
+		freq="$(printf $line | cut -d' ' -f2)"
 		fg="$(printf $line | cut -d' ' -f3)"
 		bg="$(printf $line | cut -d' ' -f4)"
 
+		echo "Module: $mod; freq: $freq; fg: $fg; bg: $bg"
+
 		check_config "$mod" "$freq" "$fg" "$bg"
 		if ! [ "$invalid_config" ]; then
-			if [ $freq -ge 1 ] && [ $(($sec % $freq)) -eq 0 ]; then
+			if [ "$freq" -ge 1 ] && [ $(($sec % $freq)) -eq 0 ]; then
 				cache_module "$mod"
 			else
 				printf "$cache" | grep -q "^$mod" || cache_module "$mod"
@@ -190,7 +188,7 @@ generate_bar() {
 		fi
 	done
 
-	bar="$(printf "$bar" | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g")"
+	bar="$(printf "$bar " | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g")"
 }
 
 #
