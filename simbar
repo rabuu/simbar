@@ -165,7 +165,7 @@ generate_bar() {
 	# reset bar
 	bar=''
 
-	# load modules.conf
+	# load config file
 	if ! [ -f "$config_dir/$config_file" ]; then
 		echo "ERROR: No config file found: $config_dir/$config_file" >&2
 		exit 1
