@@ -1,5 +1,5 @@
 # simbar
-Simple bar for [suckless.org]'s [dwm](https://dwm.suckless.org/) written in POSIX shell.
+Simple bar for [suckless.org](suckless.org)'s [dwm](https://dwm.suckless.org/) written in POSIX shell.
 
 `simbar` is intended to be easily configurable and extendable.
 
@@ -31,7 +31,7 @@ A module is just an executable file that outputs something to STDOUT, it can be 
 
 In the `simbar.modules` file you have to call the modules you want to enable.
 You can configure how often they should be rerun and their color.
-Therefore, see [example_config].
+Therefore, see the [example config](example_config).
 
 You can change your config during runtime but don't remove or move the `simbar.modules` file.
 
