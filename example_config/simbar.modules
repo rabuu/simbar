@@ -1,0 +1,10 @@
+# Frequency 0 means that the value never gets updated and keeps the initial value
+whoami 0
+
+network 15 #FF0000 #000000
+
+# You can replace a color codes with 'xgetres' to set the color through
+# `xgetres simbar.MODULE.fg` and `xgetres simbar.MODULE.bg`
+memory 10 xgetres xgetres
+
+date 5

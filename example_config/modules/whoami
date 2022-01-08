@@ -1,0 +1,5 @@
+#!/bin/sh
+
+hostname="$(hostname)" || hostname="$(cat '/etc/hostname')"
+
+printf "%s@%s" "$USER" "$hostname"
