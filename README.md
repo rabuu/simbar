@@ -13,12 +13,14 @@ USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--d
 There are two output modes:
 - `print`: Just print the bar to STDOUT.
 - `xsetroot`: Set the dwm bar. You need `xsetroot` installed.
+
 You can enable both modes at the same time.
 
 ### frequency mode
 There are two frequency modes:
 - `once`: Just generate the bar once.
 - `repeat`: Regenerate the bar every second.
+
 Only one of the two modes can be enable at the same time.
 
 ## config
@@ -32,7 +34,7 @@ In the `simbar.modules` file you have to call the modules you want to enable.
 You can configure how often they should be rerun and their color.
 Therefore, see the [example config](example_config).
 
-You can change your config during runtime but don't remove or move the `simbar.modules` file.
+You can change your config at runtime but don't remove or move the `simbar.modules` file.
 
 ## xgetres
 Normally, you can set a specific color by adding it directly into your config but if you have `xgetres` installed,
