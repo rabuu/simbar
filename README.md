@@ -5,8 +5,8 @@ Simple bar for [suckless.org](suckless.org)'s [dwm](https://dwm.suckless.org/) w
 There is color support but you have to [patch](https://dwm.suckless.org/patches/status2d/) dwm.
 
 ## usage
-```
-USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--delimiter DEL]
+```console
+simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--delimiter DEL]
 ```
 
 ### ouput modes
@@ -25,16 +25,16 @@ Only one of the two modes can be enable at the same time.
 
 ## config
 Per default the config directory is `${XDG_CONFIG_HOME:-$HOME/.config}/simbar`.
-In this directory you have to create a `simbar.modules` config file and a `modules` folder.
+In this directory you have to create a `simbar.mods` config file and a `modules` folder.
 
 In the `modules` folder you can put all your modules.
 A module is just an executable file that outputs something to STDOUT, it can be a shell script, a python script, basically anything.
 
-In the `simbar.modules` file you have to call the modules you want to enable.
+In the `simbar.mods` file you have to call the modules you want to enable.
 You can configure how often they should be rerun and their color.
 Therefore, see the [example config](example_config).
 
-You can change your config at runtime but don't remove or move the `simbar.modules` file.
+You can change your config at runtime but don't remove or move the `simbar.mods` file.
 
 ## xgetres
 Normally, you can set a specific color by adding it directly into your config but if you have `xgetres` installed,
@@ -46,3 +46,11 @@ foo 5 xgetres #000000
 ```
 In this case, the module `foo` would get called every five seconds.
 Its background color would be black and its foreground color is set by `xgetres 'simbar.foo.fg'`.
+
+## Signaling
+You can externally update the bar by using a signal.
+```console
+kill -42 "$(pgrep simbar)"
+```
+Note that this will reset the internal counter, so a module that gets called every twenty seconds
+would need another twenty full seconds to get called again after you signal a bar update.

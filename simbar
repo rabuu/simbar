@@ -7,7 +7,7 @@ usage='USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/confi
 #
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/simbar"
-config_file='simbar.modules'
+config_file='simbar.mods'
 delimiter=' | '
 esc_char="$(printf '\037')"
 
@@ -110,6 +110,9 @@ check_config() {
 	[ "$fg" = 'xgetres' ] && fg="$(xgetres "simbar.${mod_short}.fg")"
 	[ "$bg" = 'xgetres' ] && bg="$(xgetres "simbar.${mod_short}.bg")"
 
+	[ "$fg" = '_' ] && fg=''
+	[ "$bg" = '_' ] && bg=''
+
 	invalid_config=''
 
 	if echo "$mod_short" | grep -q '^#'; then
@@ -123,14 +126,16 @@ check_config() {
 		freq=0
 	fi
 
-	if ! [ "$invalid_config" ] && [ "$(echo "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
-		echo "ERROR: $fg is not a valid hex color code" >&2
-		invalid_config='true'
-	fi
+	if [ -z "$invalid_config" ]; then
+		if [ "$(echo "$fg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$fg" ]; then
+			echo "ERROR: $fg is not a valid hex color code" >&2
+			invalid_config='true'
+		fi
 
-	if ! [ "$invalid_config" ] && [ "$(echo "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
-		echo "ERROR: $bg is not a valid hex color code" >&2
-		invalid_config='true'
+		if [ "$(echo "$bg" | grep -E '^#[A-Fa-f0-9]{6}$')" != "$bg" ]; then
+			echo "ERROR: $bg is not a valid hex color code" >&2
+			invalid_config='true'
+		fi
 	fi
 }
 
@@ -199,11 +204,14 @@ generate_bar() {
 }
 
 #
-# main routine
+# display the bar
 #
 
-if [ "$freq_mode" = 'once' ]; then
-	generate_bar 0
+display() {
+	sec=$1
+
+	generate_bar $sec
+
 	if [ "$print_mode" ]; then
 		echo "$bar"
 	fi
@@ -211,20 +219,23 @@ if [ "$freq_mode" = 'once' ]; then
 	if [ "$xsetroot_mode" ]; then
 		xsetroot -name "$bar"
 	fi
+}
+
+#
+# main routine
+#
+
+# to externally update the bar: `kill -42 "$(pgrep simbar)"`
+trap "display 0" "RTMIN+8"
+
+if [ "$freq_mode" = 'once' ]; then
+	display 0
 elif [ "$freq_mode" = 'repeat' ]; then
 	sec=0
 	while true; do
-		generate_bar "$sec"
-
-		if [ "$print_mode" ]; then
-			echo "$bar"
-		fi
-
-		if [ "$xsetroot_mode" ]; then
-			xsetroot -name "$bar"
-		fi
-
-		sleep 1
-		sec=$((sec + 1))
+		sleep 1 & wait && {
+			display $sec
+			sec=$((sec + 1))
+		}
 	done
 fi
