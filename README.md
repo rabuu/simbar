@@ -47,7 +47,7 @@ foo 5 xgetres #000000
 In this case, the module `foo` would get called every five seconds.
 Its background color would be black and its foreground color is set by `xgetres 'simbar.foo.fg'`.
 
-## Signaling
+## signaling
 You can externally update the bar by using a signal.
 ```console
 kill -42 "$(pgrep simbar)"
