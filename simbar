@@ -225,9 +225,6 @@ display() {
 # main routine
 #
 
-# to externally update the bar: `kill -42 "$(pgrep simbar)"`
-trap "display 0" "RTMIN+8"
-
 if [ "$freq_mode" = 'once' ]; then
 	display 0
 elif [ "$freq_mode" = 'repeat' ]; then
