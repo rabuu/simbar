@@ -1,6 +1,6 @@
 #!/bin/sh
 
-usage='USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--delimiter DEL]'
+usage='USAGE: simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--delimiter DEL] [--padding]'
 
 #
 # defaults
@@ -48,6 +48,9 @@ for arg in "$@"; do
 				;;
 			'-d'|'--delimiter')
 				next_is_delimiter=1
+				;;
+			'--padding')
+				padding='true'
 				;;
 			'-h'|'--help')
 				echo $usage
@@ -200,7 +203,11 @@ generate_bar() {
 		fi
 	done
 
-	bar="$(echo "$bar " | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g;s/$delimiter$//")"
+	bar="$(echo "$bar" | tr '\n' "$esc_char" | sed "s/$esc_char/$delimiter/g;s/$delimiter$//")"
+
+	if [ "$padding" ]; then
+		bar=" $bar "
+	fi
 }
 
 #

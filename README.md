@@ -6,7 +6,7 @@ There is color support but you have to [patch](https://dwm.suckless.org/patches/
 
 ## usage
 ```console
-simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--delimiter DEL]
+simbar --print|--xsetroot --once|--repeat [--config /path/to/config] [--delimiter DEL] [--padding]
 ```
 
 ### ouput modes
