@@ -1,0 +1,10 @@
+delimiter = " | "
+
+padding = true
+
+modules = [
+	{ mod = "whoami"},
+	{ mod = "network", repeat = 15, fg = "#FF0000", bg = "#000000"},
+	{ mod = "memory", repeat = 10, fg = "xgetres", bg = "xgetres"},
+	{ mod = "date", repeat = 5, fg = "#fff00f"}
+]
