@@ -11,3 +11,4 @@ toml = "0.5.8"
 xdg = "2.4.1"
 clap = { version = "3.1.2", features = ["derive"] }
 x11 = "2.19.1"
+regex = "1.5.4"

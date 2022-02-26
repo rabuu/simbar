@@ -1,8 +1,14 @@
+mod bar;
 mod config;
 mod xstatus;
 
+use std::{thread, time::Duration};
+
 use clap::Parser;
+
+use bar::Bar;
 use config::Config;
+use xstatus::XStatus;
 
 #[derive(Parser, Debug)]
 #[clap(version, about = "Simple status bar for dwm", long_about = None)]
@@ -17,20 +23,33 @@ struct Cli {
     config: Option<String>,
 }
 
+type Cmd = String;
+
 fn main() {
     let cli = Cli::parse();
-    let (config, config_path) = Config::new(cli.config);
 
-    for module in &config.module {
-        use std::process::Command;
+    let xstatus: Option<XStatus> = match cli.print_only {
+        true => None,
+        false => Some(XStatus::new()),
+    };
 
-        let output = Command::new("/bin/sh")
-            .arg("-c")
-            .args(module.cmd.split_whitespace())
-            .current_dir(config_path.parent().unwrap())
-            .output()
-            .unwrap();
+    let mut bar = Bar::new();
 
-        println!("{:?}", output);
+    let mut secs = 0;
+    loop {
+        let bar = bar.generate_bar(Config::new(cli.config.as_ref()), secs);
+
+        if cli.print_only {
+            println!("{}", bar);
+        } else {
+            xstatus.as_ref().unwrap().set_status(&bar);
+        }
+
+        if cli.once {
+            break;
+        }
+
+        thread::sleep(Duration::from_secs(1));
+        secs += 1;
     }
 }

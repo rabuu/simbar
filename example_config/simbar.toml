@@ -13,8 +13,8 @@ bg = "#000000"
 [[module]]
 cmd = "./modules/memory"
 repeat = 10
-fg = "xresources"
-bg = "xresources"
+fg = "xres:memory"
+# bg = "xres:memory"
 
 [[module]]
 cmd = "date '+%a %Y-%m-%d %R:%S'"
