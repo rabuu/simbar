@@ -4,6 +4,9 @@ Simple status bar for [suckless.org](suckless.org)'s [dwm](https://dwm.suckless.
 
 There is color support but you have to [patch](https://dwm.suckless.org/patches/status2d/) dwm.
 
+## dependencies
+You need `Xlib` to get `simbar` working.
+
 ## config
 Per default the config directory is `${XDG_CONFIG_HOME:-$HOME/.config}/simbar`.
 In this directory you have to create a `simbar.toml` config file.
