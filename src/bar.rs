@@ -63,7 +63,7 @@ impl Bar {
             if should_cache {
                 let output = Command::new("/bin/sh")
                     .arg("-c")
-                    .args(module.cmd.split_whitespace())
+                    .arg(&module.cmd)
                     .current_dir(config_path.parent().unwrap())
                     .output()
                     .unwrap();

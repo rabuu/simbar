@@ -1,14 +1,27 @@
-delimiter = " | "
-padding = true
+delimiter = " " # default is " | "
+padding = true # default is false
 
 [[module]]
+# name is *not* optional and should be unique
 name = "whoami"
-cmd = "./modules/whoami"
+
+# cmd is *not* optional
+# the value is executed as `/bin/sh -c VALUE`
+# note that you cannot use spaces currently, so only simple commands are possible
+cmd = "whoami"
 
 [[module]]
 name = "network"
+
+# if you pass a relative path,
+# the cmd gets executed from the location of the config file
 cmd = "./modules/network"
+
+# using repeat you can specify how often (in secs) the cmd should be repeated
+# if repeat is not specified, the cmd gets executed only in the first second
 repeat = 15
+
+# you can specify colors like this
 fg = "#FF0000"
 bg = "#000000"
 
@@ -16,11 +29,18 @@ bg = "#000000"
 name = "memory"
 cmd = "./modules/memory"
 repeat = 10
-fg = "xresources"
-# bg = "xresources"
+
+# you can pass "xresources" to search in the XRDB for a color
+fg = "xresources" # this searches for "simbar.memory.fg"
+bg = "xresources" # this searches for "simbar.memory.bg"
 
 [[module]]
 name = "date"
-cmd = "date '+%a %Y-%m-%d %R:%S'"
+cmd = "date"
 repeat = 5
+
+# you can specify a prefix and a suffix
+prefix = "[DATE: "
+suffix = "]"
+
 fg = "#fff00f"
