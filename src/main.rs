@@ -45,6 +45,6 @@ fn main() {
         }
 
         thread::sleep(Duration::from_secs(1));
-        sec = (sec + 1) % usize::max_value();
+        sec = sec.wrapping_add(1);
     }
 }
