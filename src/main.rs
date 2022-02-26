@@ -1,22 +1,18 @@
 mod config;
+mod xstatus;
 
-use clap::{ArgGroup, Parser};
+use clap::Parser;
 use config::Config;
+use xstatus::XStatus;
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-#[clap(group(ArgGroup::new("out_mode").required(true).multiple(false)))]
-#[clap(group(ArgGroup::new("freq_mode").required(true).multiple(false)))]
+#[clap(version, about = "Simple status bar for dwm", long_about = None)]
 struct Cli {
-    #[clap(short, long, group = "out_mode")]
-    print: bool,
-    #[clap(short, long, group = "out_mode")]
-    xsetroot: bool,
+    #[clap(short, long)]
+    print_only: bool,
 
-    #[clap(short, long, group = "freq_mode")]
+    #[clap(short, long)]
     once: bool,
-    #[clap(short, long, group = "freq_mode")]
-    repeat: bool,
 
     #[clap(short, long)]
     config: Option<String>,
@@ -25,6 +21,4 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     let config = Config::new(cli.config);
-
-    println!("{:#?}", config);
 }
