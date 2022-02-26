@@ -3,8 +3,8 @@ delimiter = " | "
 padding = true
 
 modules = [
-	{ mod = "whoami"},
-	{ mod = "network", repeat = 15, fg = "#FF0000", bg = "#000000"},
-	{ mod = "memory", repeat = 10, fg = "xgetres", bg = "xgetres"},
-	{ mod = "date", repeat = 5, fg = "#fff00f"}
+	{ module = "whoami"},
+	{ module = "network", repeat = 15, fg = "#FF0000", bg = "#000000"},
+	{ module = "memory", repeat = 10, fg = "xgetres", bg = "xgetres"},
+	{ module = "date", repeat = 5, fg = "#fff00f"}
 ]
