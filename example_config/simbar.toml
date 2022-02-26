@@ -2,21 +2,25 @@ delimiter = " | "
 padding = true
 
 [[module]]
+name = "whoami"
 cmd = "./modules/whoami"
 
 [[module]]
+name = "network"
 cmd = "./modules/network"
 repeat = 15
 fg = "#FF0000"
 bg = "#000000"
 
 [[module]]
+name = "memory"
 cmd = "./modules/memory"
 repeat = 10
-fg = "xres:memory"
-# bg = "xres:memory"
+fg = "xresources"
+# bg = "xresources"
 
 [[module]]
+name = "date"
 cmd = "date '+%a %Y-%m-%d %R:%S'"
 repeat = 5
 fg = "#fff00f"

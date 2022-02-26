@@ -1,48 +1,43 @@
 mod bar;
 mod config;
-mod xstatus;
+mod x11_interface;
 
-use std::{thread, time::Duration};
+use std::thread;
+use std::time::Duration;
 
 use clap::Parser;
 
 use bar::Bar;
 use config::Config;
-use xstatus::XStatus;
 
 #[derive(Parser, Debug)]
 #[clap(version, about = "Simple status bar for dwm", long_about = None)]
 struct Cli {
-    #[clap(short, long)]
-    print_only: bool,
+    #[clap(short, long, help = "Only print the bar to STDOUT")]
+    print: bool,
 
-    #[clap(short, long)]
+    #[clap(short, long, help = "Do not loop and run only once")]
     once: bool,
 
-    #[clap(short, long)]
+    #[clap(short, long, help = "Pass a config file")]
     config: Option<String>,
 }
 
-type Cmd = String;
-
 fn main() {
     let cli = Cli::parse();
-
-    let xstatus: Option<XStatus> = match cli.print_only {
-        true => None,
-        false => Some(XStatus::new()),
-    };
-
     let mut bar = Bar::new();
 
-    let mut secs = 0;
+    let mut sec = 0;
     loop {
-        let bar = bar.generate_bar(Config::new(cli.config.as_ref()), secs);
+        match Config::new(cli.config.as_ref()) {
+            Ok(config) => bar.regenerate(config, sec),
+            Err(e) => eprintln!("Invalid config: {}", e),
+        }
 
-        if cli.print_only {
-            println!("{}", bar);
+        if cli.print {
+            println!("{}", bar.bar);
         } else {
-            xstatus.as_ref().unwrap().set_status(&bar);
+            bar.set_status();
         }
 
         if cli.once {
@@ -50,6 +45,6 @@ fn main() {
         }
 
         thread::sleep(Duration::from_secs(1));
-        secs += 1;
+        sec = (sec + 1) % usize::max_value();
     }
 }
