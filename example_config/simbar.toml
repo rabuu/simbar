@@ -1,10 +1,22 @@
 delimiter = " | "
-
 padding = true
 
-modules = [
-	{ module = "whoami"},
-	{ module = "network", repeat = 15, fg = "#FF0000", bg = "#000000"},
-	{ module = "memory", repeat = 10, fg = "xgetres", bg = "xgetres"},
-	{ module = "date", repeat = 5, fg = "#fff00f"}
-]
+[[module]]
+cmd = "./modules/whoami"
+
+[[module]]
+cmd = "./modules/network"
+repeat = 15
+fg = "#FF0000"
+bg = "#000000"
+
+[[module]]
+cmd = "./modules/memory"
+repeat = 10
+fg = "xresources"
+bg = "xresources"
+
+[[module]]
+cmd = "date '+%a %Y-%m-%d %R:%S'"
+repeat = 5
+fg = "#fff00f"
