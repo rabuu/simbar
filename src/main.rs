@@ -3,7 +3,6 @@ mod xstatus;
 
 use clap::Parser;
 use config::Config;
-use xstatus::XStatus;
 
 #[derive(Parser, Debug)]
 #[clap(version, about = "Simple status bar for dwm", long_about = None)]
@@ -20,5 +19,18 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    let config = Config::new(cli.config);
+    let (config, config_path) = Config::new(cli.config);
+
+    for module in &config.module {
+        use std::process::Command;
+
+        let output = Command::new("/bin/sh")
+            .arg("-c")
+            .args(module.cmd.split_whitespace())
+            .current_dir(config_path.parent().unwrap())
+            .output()
+            .unwrap();
+
+        println!("{:?}", output);
+    }
 }
