@@ -50,3 +50,13 @@ impl X11Interface {
         Some(xresmanstr.to_str().ok()?.to_string())
     }
 }
+
+impl Drop for X11Interface {
+    fn drop(&mut self) {
+        unsafe {
+            xlib::XCloseDisplay(self.display);
+        }
+        drop(self.display);
+        drop(self.window);
+    }
+}
