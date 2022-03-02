@@ -56,7 +56,5 @@ impl Drop for X11Interface {
         unsafe {
             xlib::XCloseDisplay(self.display);
         }
-        drop(self.display);
-        drop(self.window);
     }
 }
