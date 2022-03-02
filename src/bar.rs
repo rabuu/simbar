@@ -48,19 +48,10 @@ impl Bar {
 
         // loop over all modules from config
         for module in &config.module {
-            // decide whether module must be cached
             let repeat = module.repeat.unwrap_or(0);
-            let mut should_cache = false;
-            if repeat >= 1 && sec % repeat == 0 {
-                should_cache = true;
-            } else {
-                if !self.cache.contains_key(&module.name) {
-                    should_cache = true;
-                }
-            }
 
             // evaluate module value and cache it
-            if should_cache {
+            if (repeat >= 1 && sec % repeat == 0) || !self.cache.contains_key(&module.name) {
                 let output = Command::new("/bin/sh")
                     .arg("-c")
                     .arg(&module.cmd)
@@ -84,7 +75,7 @@ impl Bar {
             }
 
             // add module value to bar
-            self.push_module(&module);
+            self.push_module(module);
 
             // add delimiter to bar
             self.bar.push_str(del);
@@ -97,7 +88,7 @@ impl Bar {
 
         // add padding to bar
         if config.padding.unwrap_or(false) {
-            self.bar.insert_str(0, " ");
+            self.bar.insert(0, ' ');
             self.bar.push(' ');
         }
     }
