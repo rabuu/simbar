@@ -1,6 +1,6 @@
 [package]
 name = "simbar"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,3 +12,4 @@ xdg = "2.4.1"
 clap = { version = "3.1.2", features = ["derive"] }
 x11 = "2.19.1"
 regex = "1.5.4"
+shell-words = "1.1.0"

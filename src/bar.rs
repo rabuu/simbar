@@ -52,9 +52,12 @@ impl Bar {
 
             // evaluate module value and cache it
             if (repeat >= 1 && sec % repeat == 0) || !self.cache.contains_key(&module.name) {
+                let args = shell_words::split(&format!("'{}'", module.cmd))
+                    .expect("Command could not be parsed");
+
                 let output = Command::new("/bin/sh")
                     .arg("-c")
-                    .arg(&module.cmd)
+                    .args(args)
                     .current_dir(config_path.parent().unwrap())
                     .output()
                     .unwrap();

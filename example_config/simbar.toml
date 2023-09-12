@@ -6,8 +6,7 @@ padding = true # default is false
 name = "whoami"
 
 # cmd is *not* optional
-# the value is executed as `/bin/sh -c VALUE`
-# note that you cannot use spaces currently, so only simple commands are possible
+# the value is executed as `/bin/sh -c 'VALUE'`
 cmd = "whoami"
 
 [[module]]
@@ -36,7 +35,7 @@ bg = "xresources" # this searches for "simbar.memory.bg"
 
 [[module]]
 name = "date"
-cmd = "date"
+cmd = "date -u"
 repeat = 5
 
 # you can specify a prefix and a suffix
